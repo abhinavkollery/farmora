@@ -265,13 +265,13 @@ def receive_sensor():
         db_execute(cursor,
             f'CREATE TABLE IF NOT EXISTS `{current_sensor}` '
             '(TIME_STAMP VARCHAR(50), TEMPERATURE DECIMAL(4,1), '
-            'HUMIDITY DECIMAL(4,1), SOIL_MOISTURE DECIMAL(4,1))'
+            'HUMIDITY DECIMAL(4,1), SOIL_MOISTURE DECIMAL(4,1), PRESSURE DECIMAL(6,2))'
         )
 
         db_execute(cursor,
-            f'INSERT INTO `{current_sensor}` (TIME_STAMP, TEMPERATURE, HUMIDITY, SOIL_MOISTURE) '
-            'VALUES (%s, %s, %s, %s)',
-            (now_str, payload.get("temperature", 25.0), payload.get("humidity", 60.0), payload.get("soil moisture", payload.get("soil_moisture", 50.0)))
+            f'INSERT INTO `{current_sensor}` (TIME_STAMP, TEMPERATURE, HUMIDITY, SOIL_MOISTURE, PRESSURE) '
+            'VALUES (%s, %s, %s, %s, %s)',
+            (now_str, payload.get("temperature", 25.0), payload.get("humidity", 60.0), payload.get("soil moisture", payload.get("soil_moisture", 50.0)), payload.get("pressure", 1013.25))
         )
 
     # Immediately trigger watering prediction update for this sensor
