@@ -1,0 +1,11 @@
+flask==3.0.3
+mysql-connector-python==8.4.0
+apscheduler==3.10.4
+joblib==1.4.2
+xgboost==2.0.3
+pandas==2.2.2
+requests==2.32.3
+tensorflow-cpu==2.16.1
+gunicorn==22.0.0
+pillow==11.1.0
+scikit-learn==1.7.2
