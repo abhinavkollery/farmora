@@ -129,8 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.sensors && data.sensors.length) {
           const currentVal = sensorSelect.value;
           sensorSelect.innerHTML = data.sensors.map(id => `<option value="${id}">${id}</option>`).join('');
-          if (data.sensors.includes(currentVal)) {
+
+          // Auto-select real physical hardware sensor node if available
+          const realSensor = data.sensors.find(id => id !== 'ESP_01') || data.sensors[0];
+          if (currentVal && data.sensors.includes(currentVal) && currentVal !== 'ESP_01') {
             sensorSelect.value = currentVal;
+          } else {
+            sensorSelect.value = realSensor;
           }
         }
       }
