@@ -120,6 +120,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const airHumVal = document.getElementById('airHumVal');
   const wateringDecisionText = document.getElementById('wateringDecisionText');
 
+  async function loadAvailableSensors() {
+    if (!sensorSelect) return;
+    try {
+      const res = await fetch('/sensors');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.sensors && data.sensors.length) {
+          const currentVal = sensorSelect.value;
+          sensorSelect.innerHTML = data.sensors.map(id => `<option value="${id}">${id}</option>`).join('');
+          if (data.sensors.includes(currentVal)) {
+            sensorSelect.value = currentVal;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Sensors List] Could not fetch sensors:', e);
+    }
+  }
+
   async function pollLatestSensorData() {
     const sensorId = sensorSelect ? sensorSelect.value : 'ESP_01';
     try {
@@ -149,6 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sensorSelect) {
     sensorSelect.addEventListener('change', pollLatestSensorData);
   }
+  loadAvailableSensors();
+  setInterval(loadAvailableSensors, 15000);
   setInterval(pollLatestSensorData, 5000);
   pollLatestSensorData();
 
