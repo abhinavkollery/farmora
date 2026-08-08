@@ -43,11 +43,14 @@ def _hf_list_crop_folders():
     try:
         from huggingface_hub import list_repo_files
         files = list(list_repo_files(HF_REPO, token=HF_TOKEN))
-        # Each path looks like "rice/rice_model.h5" — extract top-level dirs
         folders = set()
         for f in files:
             parts = f.split("/")
-            if len(parts) >= 2:
+            # If user uploaded the 'models' folder itself, skip the 'models' part
+            if len(parts) >= 2 and parts[0] == "models":
+                if len(parts) >= 3:
+                    folders.add(parts[1])
+            elif len(parts) >= 2:
                 folders.add(parts[0])
         return sorted(folders)
     except Exception as e:
@@ -119,14 +122,16 @@ def _load_crop_from_hf(crop_folder):
     # Find the .h5 and .json filenames in the repo
     from huggingface_hub import list_repo_files
     files = list(list_repo_files(HF_REPO, token=HF_TOKEN))
-    crop_files = [f for f in files if f.startswith(f"{crop_folder}/")]
+    
+    # Check both "models/crop_folder/" and "crop_folder/"
+    crop_files = [f for f in files if f.startswith(f"{crop_folder}/") or f.startswith(f"models/{crop_folder}/")]
 
     h5_files   = [f for f in crop_files if f.lower().endswith(".h5")]
     json_files = [f for f in crop_files if f.lower().endswith(".json")]
 
     if not h5_files or not json_files:
         raise ValueError(
-            f"HF repo '{HF_REPO}/{crop_folder}' must contain exactly one .h5 and one .json file. "
+            f"HF repo '{HF_REPO}' must contain exactly one .h5 and one .json file for '{crop_folder}'. "
             f"Found: {crop_files}"
         )
 
