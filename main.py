@@ -187,10 +187,6 @@ with get_cursor() as _setup_cursor:
 # ---------------------------------------------------------------------
 # Flask app
 # ---------------------------------------------------------------------
-
-# ---------------------------------------------------------------------
-# Flask app
-# ---------------------------------------------------------------------
 app = Flask(__name__, static_folder="static", static_url_path="")
 scheduler = BackgroundScheduler()
 
@@ -252,7 +248,7 @@ def receive_sensor():
 def simulate_sensor():
     """UI helper to simulate incoming sensor telemetry."""
     payload = request.get_json(silent=True) or {}
-    sensor_id = str(payload.get("ESP_no", "ESP_01"))
+    sensor_id = str(payload.get("ESP_no") or "SIM_01")
     temp = float(payload.get("temperature", 27.0))
     hum = float(payload.get("humidity", 65.0))
     moi = float(payload.get("soil_moisture", payload.get("soil moisture", 55.0)))
@@ -376,10 +372,16 @@ def store_latest_readings():
                 if None in (temp, humidity, soil_moisture, time_stamp):
                     continue
 
+                pressure = data.get("pressure", 1013.25)
                 db_execute(cursor,
-                    f'INSERT INTO `{sensor}` (TIME_STAMP, TEMPERATURE, HUMIDITY, SOIL_MOISTURE) '
-                    'VALUES (%s, %s, %s, %s)',
-                    (time_stamp, temp, humidity, soil_moisture)
+                    f'CREATE TABLE IF NOT EXISTS `{sensor}` '
+                    '(TIME_STAMP VARCHAR(50), TEMPERATURE DECIMAL(4,1), '
+                    'HUMIDITY DECIMAL(4,1), SOIL_MOISTURE DECIMAL(4,1), PRESSURE DECIMAL(6,2))'
+                )
+                db_execute(cursor,
+                    f'INSERT INTO `{sensor}` (TIME_STAMP, TEMPERATURE, HUMIDITY, SOIL_MOISTURE, PRESSURE) '
+                    'VALUES (%s, %s, %s, %s, %s)',
+                    (time_stamp, temp, humidity, soil_moisture, pressure)
                 )
     except Exception as e:
         print(f"[Store Readings] Error: {e}")
@@ -421,13 +423,16 @@ def watering_prediction():
 
     try:
         with get_cursor(buffered=True) as cursor:
-            cursor.execute("SELECT * FROM SENSORS;")
+            db_execute(cursor, "SELECT Sensor_no FROM SENSORS")
             sensor_list = cursor.fetchall()
 
             for row in sensor_list:
                 sensor_name = row[0]
-                cursor.execute(f"SELECT * FROM `{sensor_name}` ORDER BY TIME_STAMP DESC LIMIT 1;")
-                data = cursor.fetchone()
+                try:
+                    db_execute(cursor, f"SELECT * FROM `{sensor_name}` ORDER BY TIME_STAMP DESC LIMIT 1")
+                    data = cursor.fetchone()
+                except Exception:
+                    continue
                 if data is None:
                     continue
 

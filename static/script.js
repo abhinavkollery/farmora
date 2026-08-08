@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const m = parseFloat(document.getElementById('simMoisture').value) || 25;
             const t = parseFloat(document.getElementById('simTemp').value) || 30;
             const h = parseFloat(document.getElementById('simHum').value) || 60;
-            const sensorId = sensorSelect ? sensorSelect.value : 'ESP_01';
+            const sensorId = sensorSelect && sensorSelect.value ? sensorSelect.value : 'SIM_01';
 
             try {
               const res = await fetch('/simulate', {
