@@ -278,46 +278,108 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMandiPrices();
 
   /* ---------- TENSORFLOW DISEASE SCANNER ---------- */
-  const diseaseForm = document.getElementById('diseaseForm');
+  const uploadImageBtn  = document.getElementById('uploadImageBtn');
   const diseaseFileInput = document.getElementById('diseaseFileInput');
-  const diseaseCropSelect = document.getElementById('diseaseCropSelect');
-  const diseaseResultBox = document.getElementById('diseaseResultBox');
+  // crop select is id="cropSelect" on the disease page header
+  const diseaseCropSelect = document.getElementById('cropSelect');
+  const scanRing        = document.getElementById('scanRing');
+  const scanRingContent = document.getElementById('scanRingContent');
+  const scanStatus      = document.getElementById('scanStatus');
+  const scanHint        = document.getElementById('scanHint');
+  const resultName      = document.getElementById('resultName');
+  const resultSeverity  = document.getElementById('resultSeverity');
+  const resultArea      = document.getElementById('resultArea');
+  const resultAction    = document.getElementById('resultAction');
+  const confArc         = document.getElementById('confArc');
+  const confValue       = document.getElementById('confValue');
+  const confLabel       = document.getElementById('confLabel');
+  const scanThumbs      = document.getElementById('scanThumbs');
 
-  if (diseaseForm) {
-    diseaseForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!diseaseFileInput || !diseaseFileInput.files.length) {
-        showToast('Please select a crop leaf image to scan.');
-        return;
-      }
-      const formData = new FormData();
-      formData.append('image', diseaseFileInput.files[0]);
-      formData.append('crop', diseaseCropSelect ? diseaseCropSelect.value : 'rice');
+  function setConfidenceRing(pct) {
+    // stroke-dasharray="264" (circumference). offset 264 = empty, 0 = full.
+    const offset = 264 - (264 * pct / 100);
+    if (confArc) confArc.style.strokeDashoffset = offset;
+    if (confValue) confValue.textContent = pct + '%';
+    if (confLabel) confLabel.textContent = pct >= 80 ? 'High' : pct >= 50 ? 'Moderate' : 'Low';
+  }
 
-      if (diseaseResultBox) {
-        diseaseResultBox.innerHTML = '<p style="color:#8CFF6B;">🔍 Running TensorFlow Neural Network Inference...</p>';
-      }
+  function addScanThumb(isHealthy) {
+    if (!scanThumbs) return;
+    const span = document.createElement('span');
+    span.className = 'thumb ' + (isHealthy ? 'healthy' : 'critical');
+    span.textContent = isHealthy ? '🍃' : '🍂';
+    scanThumbs.prepend(span);
+    // Keep last 6 thumbs
+    while (scanThumbs.children.length > 6) scanThumbs.removeChild(scanThumbs.lastChild);
+  }
 
-      try {
-        const res = await fetch('/disease', { method: 'POST', body: formData });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === 'ok' && data.top_prediction) {
-            const pred = data.top_prediction;
-            diseaseResultBox.innerHTML = `
-              <div style="background:#1e293b; padding:15px; border-radius:10px; border:1px solid #334155; margin-top:10px;">
-                <h4 style="color:#8CFF6B; font-size:16px; margin-bottom:8px;">Diagnosis: ${pred.name}</h4>
-                <p style="font-size:13px; color:#cbd5e1; margin-bottom:5px;"><b>Confidence:</b> ${pred.confidence}%</p>
-                <p style="font-size:13px; color:#cbd5e1; margin-bottom:5px;"><b>Severity:</b> <span style="color:${pred.severity === 'High' ? '#ef4444' : '#f59e0b'};">${pred.severity}</span> (Affected Area: ${pred.area || 'N/A'})</p>
-                <p style="font-size:13px; color:#38bdf8; margin-top:8px;"><b>Recommended Treatment:</b> ${pred.action}</p>
-              </div>
-            `;
-          } else {
-            if (diseaseResultBox) diseaseResultBox.innerHTML = '<p style="color:#ef4444;">Could not analyze image. Try another leaf sample.</p>';
-          }
+  async function runDiseaseScan(file) {
+    // --- Scanning state ---
+    if (scanRingContent) scanRingContent.textContent = '⏳';
+    if (scanStatus) scanStatus.textContent = 'Scanning...';
+    if (scanHint) scanHint.textContent = 'Running TensorFlow inference...';
+    if (resultName) resultName.textContent = '--';
+    if (resultSeverity) resultSeverity.textContent = '--';
+    if (resultArea) resultArea.textContent = '--';
+    if (resultAction) { resultAction.textContent = ''; resultAction.style.color = 'var(--text-dim)'; }
+    setConfidenceRing(0);
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('crop', diseaseCropSelect ? diseaseCropSelect.value : 'rice');
+
+    try {
+      const res = await fetch('/disease', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (res.ok && data.status === 'ok' && data.top_prediction) {
+        const pred = data.top_prediction;
+        const conf = Math.round(pred.confidence);
+
+        // Update result panel
+        if (resultName) resultName.textContent = pred.name;
+        if (resultSeverity) {
+          resultSeverity.textContent = pred.severity;
+          resultSeverity.style.color = pred.severity === 'Severe' || pred.severity === 'High'
+            ? '#ef4444' : pred.severity === 'Moderate' ? '#f59e0b' : '#4ADE80';
         }
-      } catch (err) {
-        if (diseaseResultBox) diseaseResultBox.innerHTML = '<p style="color:#ef4444;">Server connection error during scan.</p>';
+        if (resultArea) resultArea.textContent = pred.area || '--';
+        if (resultAction) {
+          resultAction.textContent = pred.action;
+          resultAction.style.color = '';
+        }
+        setConfidenceRing(conf);
+
+        // Scan ring success state
+        if (scanRingContent) scanRingContent.textContent = pred.severity === 'None' ? '✅' : '🔬';
+        if (scanStatus) scanStatus.textContent = pred.name;
+        if (scanHint) scanHint.textContent = `${conf}% confidence · ${pred.severity} severity`;
+
+        addScanThumb(pred.severity === 'None');
+        showToast(`Detected: ${pred.name} (${conf}% confidence)`);
+      } else {
+        const msg = data.message || 'Could not analyze image.';
+        if (scanRingContent) scanRingContent.textContent = '❌';
+        if (scanStatus) scanStatus.textContent = 'Scan Failed';
+        if (scanHint) scanHint.textContent = msg;
+        showToast('Analysis failed: ' + msg);
+      }
+    } catch (err) {
+      if (scanRingContent) scanRingContent.textContent = '❌';
+      if (scanStatus) scanStatus.textContent = 'Connection Error';
+      if (scanHint) scanHint.textContent = 'Could not reach server. Check your connection.';
+      showToast('Server connection error during scan.');
+    }
+  }
+
+  // Upload button → triggers hidden file input
+  if (uploadImageBtn && diseaseFileInput) {
+    uploadImageBtn.addEventListener('click', () => diseaseFileInput.click());
+
+    // File selected → auto-run scan
+    diseaseFileInput.addEventListener('change', () => {
+      if (diseaseFileInput.files && diseaseFileInput.files.length > 0) {
+        runDiseaseScan(diseaseFileInput.files[0]);
       }
     });
   }

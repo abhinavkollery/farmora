@@ -241,40 +241,38 @@
         <div class="scan-ring" id="scanRing"><span id="scanRingContent">🍃</span></div>
         <b id="scanStatus">Scan Leaf</b>
         <small id="scanHint">Upload or capture image to detect disease</small>
-        <button class="btn btn-primary" id="uploadImageBtn">Upload Image</button>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
+        <form id="diseaseForm" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:10px;">
+          <button type="button" class="btn btn-primary" id="uploadImageBtn">Upload Image</button>
+          <input type="file" id="diseaseFileInput" accept="image/*" style="display:none">
+        </form>
       </div>
 
       <div class="panel result-panel reveal">
         <div class="result-head"><span>Detection Result</span><span>Confidence</span></div>
         <div class="result-body">
           <div>
-            <b class="result-name" id="resultName">Leaf Spot</b>
-            <div class="result-row"><span>Severity</span><b id="resultSeverity">Moderate</b></div>
-            <div class="result-row"><span>Affected Area</span><b id="resultArea">23%</b></div>
+            <b class="result-name" id="resultName">--</b>
+            <div class="result-row"><span>Severity</span><b id="resultSeverity">--</b></div>
+            <div class="result-row"><span>Affected Area</span><b id="resultArea">--</b></div>
           </div>
           <div class="confidence-ring">
             <svg viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="42" fill="none" stroke="#1c2b1e" stroke-width="8"/>
-              <circle cx="50" cy="50" r="42" fill="none" stroke="#4ADE80" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="24" stroke-linecap="round" transform="rotate(-90 50 50)" id="confArc"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#4ADE80" stroke-width="8" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" transform="rotate(-90 50 50)" id="confArc"/>
             </svg>
-            <div class="conf-label"><b id="confValue">92%</b><small id="confLabel">High</small></div>
+            <div class="conf-label"><b id="confValue">--%</b><small id="confLabel">Awaiting</small></div>
           </div>
         </div>
         <div class="recommend">
           <b>Recommended Action</b>
-          <p id="resultAction">Remove affected leaves and apply recommended fungicide.</p>
+          <p id="resultAction" style="color:var(--text-dim);">Upload a leaf image to begin diagnosis.</p>
         </div>
+        <div id="diseaseResultBox" style="margin-top:8px;"></div>
       </div>
 
       <div class="panel recent-scans reveal">
         <h3>Recent Scans</h3>
-        <div class="scan-thumbs" id="scanThumbs">
-          <span class="thumb healthy">🍃</span>
-          <span class="thumb healthy">🍃</span>
-          <span class="thumb warn">🍂</span>
-          <span class="thumb critical">🍂</span>
-        </div>
+        <div class="scan-thumbs" id="scanThumbs"></div>
       </div>
     </div>
   </section>
