@@ -66,14 +66,6 @@
           </div>
           <span>Trusted by 5,000+ farmers</span>
         </div>
-
-        <div class="feature-strip">
-          <div class="feature-chip"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-7 4 14 2-7h6"/></svg></span><div><b>Real-time</b><small>Sensor Data</small></div></div>
-          <div class="feature-chip"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="6" r="2.2"/><path d="M16 2.3v1M16 10.7v.9M20.4 6h1M10.6 6h1M19.2 3.2l.7-.7M11.4 9.4l.7-.7M19.2 8.8l.7.7M11.4 2.6l.7.7"/><path d="M4 18a3.2 3.2 0 0 1 .8-6.3A4.5 4.5 0 0 1 13.3 13a3 3 0 0 1-.9 5H4Z"/></svg></span><div><b>AI Weather</b><small>Forecasts</small></div></div>
-          <div class="feature-chip"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14C4 8 9 4 19 4c0 10-4 15-10 15C6 19 4 17 4 14Z"/><path d="M19 4 9 14"/></svg></span><div><b>Disease</b><small>Detection</small></div></div>
-          <div class="feature-chip"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V12M11 19V7M17 19v-9"/><path d="M3 19h18"/></svg></span><div><b>Market</b><small>Analysis</small></div></div>
-          <div class="feature-chip"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 3h16l-2-3Z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></span><div><b>Smart</b><small>Alerts</small></div></div>
-        </div>
       </div>
 
       <!-- Right: Character + floating stats -->
@@ -130,7 +122,7 @@
     <div class="panel reveal" style="background: var(--card-bg); padding:16px 20px; border-radius:16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <div>
         <small style="color:var(--text-dim); font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">XGBoost AI Irrigation Decision</small>
-        <h3 id="wateringDecisionText" style="margin:4px 0 0; font-size:18px;"><span style="color:#4ADE80;">🌱 No Watering Needed</span> <small style="font-size:12px; font-weight:normal; color:var(--text-dim);">(Optimal Moisture)</small></h3>
+        <h3 id="wateringDecisionText" style="margin:4px 0 0; font-size:18px;"><span style="color:var(--text-dim);">Awaiting sensor telemetry...</span></h3>
       </div>
       <button class="btn btn-primary sm" id="simulateModalBtn" style="padding:8px 16px; font-size:13px;">⚡ Test Telemetry</button>
     </div>
@@ -138,19 +130,15 @@
     <div class="stat-grid">
       <div class="stat-card reveal">
         <div class="stat-top"><small>Soil Moisture</small><span class="stat-ico">💧</span></div>
-        <b id="soilMoistureVal">55%</b><span class="tag optimal" id="soilMoistureTag">Optimal</span>
+        <b id="soilMoistureVal">--</b><span class="tag optimal" id="soilMoistureTag">Live</span>
       </div>
       <div class="stat-card reveal">
         <div class="stat-top"><small>Temperature</small><span class="stat-ico">🌡️</span></div>
-        <b id="soilTempVal">27.5°C</b><span class="tag">Normal</span>
+        <b id="soilTempVal">--</b><span class="tag">Live</span>
       </div>
       <div class="stat-card reveal">
         <div class="stat-top"><small>Humidity</small><span class="stat-ico">💦</span></div>
-        <b id="airHumVal">68%</b><span class="tag">Normal</span>
-      </div>
-      <div class="stat-card reveal">
-        <div class="stat-top"><small>pH Level</small><span class="stat-ico">⚗️</span></div>
-        <b>6.4</b><span class="tag optimal">Ideal</span>
+        <b id="airHumVal">--</b><span class="tag">Live</span>
       </div>
     </div>
 
@@ -342,12 +330,6 @@
         <b>Market Price Trends</b>
         <small>Monthly price movement across your crops</small>
         <button class="link-btn download-btn" data-report="market">Download →</button>
-      </div>
-      <div class="panel report-card upgrade-card reveal">
-        <span class="rp-ico">✨</span>
-        <b>Upgrade to Pro</b>
-        <small>Unlock advanced insights &amp; custom reports</small>
-        <button class="btn btn-primary sm" id="upgradeBtn">Upgrade Now →</button>
       </div>
     </div>
   </section>

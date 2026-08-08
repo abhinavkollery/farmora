@@ -184,41 +184,9 @@ with get_cursor() as _setup_cursor:
         )
 
 
-def _seed_demo_sensor():
-    """Seed initial sensor data so dashboard works immediately on first visit."""
-    now_str = str(datetime.now())
-    demo_payload = {
-        "ESP_no": "ESP_01",
-        "temperature": 27.5,
-        "humidity": 68.0,
-        "soil moisture": 55.0,
-        "time": now_str
-    }
-    latest_data_by_sensor["ESP_01"] = demo_payload
-
-    try:
-        with get_cursor() as cursor:
-            db_execute(cursor, """
-                INSERT INTO SENSORS (Sensor_no, last_seen)
-                VALUES (%s, %s)
-                ON DUPLICATE KEY UPDATE last_seen = VALUES(last_seen)
-            """, ("ESP_01", now_str))
-
-            db_execute(cursor,
-                'CREATE TABLE IF NOT EXISTS `ESP_01` '
-                '(TIME_STAMP VARCHAR(50), TEMPERATURE DECIMAL(4,1), '
-                'HUMIDITY DECIMAL(4,1), SOIL_MOISTURE DECIMAL(4,1))'
-            )
-            db_execute(cursor,
-                'INSERT INTO `ESP_01` (TIME_STAMP, TEMPERATURE, HUMIDITY, SOIL_MOISTURE) '
-                'VALUES (%s, %s, %s, %s)',
-                (now_str, 27.5, 68.0, 55.0)
-            )
-    except Exception as e:
-        print(f"[Seed] Sensor seed info: {e}")
-
-
-_seed_demo_sensor()
+# ---------------------------------------------------------------------
+# Flask app
+# ---------------------------------------------------------------------
 
 # ---------------------------------------------------------------------
 # Flask app
@@ -325,19 +293,35 @@ def simulate_sensor():
 @app.route("/latest/<sensor_id>", methods=["GET"])
 def latest(sensor_id):
     """UI polls this to show the current watering decision + raw reading for a sensor."""
+    target_id = None
+    for k in latest_data_by_sensor.keys():
+        if k.lower() == str(sensor_id).lower():
+            target_id = k
+            break
+    if not target_id:
+        target_id = sensor_id
+
     return jsonify({
-        "reading": latest_data_by_sensor.get(sensor_id, {}),
-        "prediction": latest_predictions.get(sensor_id, {}),
+        "reading": latest_data_by_sensor.get(target_id, {}),
+        "prediction": latest_predictions.get(target_id, {}),
     })
 
 
 @app.route("/sensors", methods=["GET"])
 def list_sensors():
     """UI can call this to populate a dropdown of known sensors."""
-    sensors_list = list(latest_data_by_sensor.keys())
-    if not sensors_list:
-        sensors_list = ["ESP_01"]
-    return jsonify({"sensors": sensors_list})
+    sensors_set = set(latest_data_by_sensor.keys())
+    try:
+        with get_cursor(buffered=True) as cursor:
+            db_execute(cursor, "SELECT Sensor_no FROM SENSORS")
+            rows = cursor.fetchall()
+            for r in rows:
+                if r and r[0]:
+                    sensors_set.add(r[0])
+    except Exception as e:
+        print(f"[Sensors DB List] Error: {e}")
+
+    return jsonify({"sensors": sorted(list(sensors_set))})
 
 
 @app.route("/disease", methods=["POST"])

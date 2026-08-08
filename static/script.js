@@ -129,14 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.sensors && data.sensors.length) {
           const currentVal = sensorSelect.value;
           sensorSelect.innerHTML = data.sensors.map(id => `<option value="${id}">${id}</option>`).join('');
-
-          // Auto-select real physical hardware sensor node if available
-          const realSensor = data.sensors.find(id => id !== 'ESP_01') || data.sensors[0];
-          if (currentVal && data.sensors.includes(currentVal) && currentVal !== 'ESP_01') {
+          if (currentVal && data.sensors.includes(currentVal)) {
             sensorSelect.value = currentVal;
           } else {
-            sensorSelect.value = realSensor;
+            sensorSelect.value = data.sensors[0];
           }
+        } else {
+          sensorSelect.innerHTML = '<option value="">No Active Sensors Found</option>';
         }
       }
     } catch (e) {
@@ -145,17 +144,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function pollLatestSensorData() {
-    const sensorId = sensorSelect ? sensorSelect.value : 'ESP_01';
+    const sensorId = sensorSelect ? sensorSelect.value : '';
+    if (!sensorId) {
+      if (soilMoistureVal) soilMoistureVal.textContent = '--';
+      if (soilTempVal) soilTempVal.textContent = '--';
+      if (airHumVal) airHumVal.textContent = '--';
+      if (wateringDecisionText) wateringDecisionText.innerHTML = '<span style="color:var(--text-dim);">Awaiting sensor telemetry...</span>';
+      return;
+    }
     try {
-      const res = await fetch(`/latest/${sensorId}`);
+      const res = await fetch(`/latest/${encodeURIComponent(sensorId)}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.reading) {
-          if (soilMoistureVal) soilMoistureVal.textContent = (data.reading['soil moisture'] || data.reading['soil_moisture'] || '--') + '%';
-          if (soilTempVal) soilTempVal.textContent = (data.reading['temperature'] || '--') + '°C';
-          if (airHumVal) airHumVal.textContent = (data.reading['humidity'] || '--') + '%';
+        if (data.reading && Object.keys(data.reading).length > 0) {
+          const m = data.reading['soil moisture'] !== undefined ? data.reading['soil moisture'] : (data.reading['soil_moisture'] !== undefined ? data.reading['soil_moisture'] : '--');
+          const t = data.reading['temperature'] !== undefined ? data.reading['temperature'] : '--';
+          const h = data.reading['humidity'] !== undefined ? data.reading['humidity'] : '--';
+          if (soilMoistureVal) soilMoistureVal.textContent = m !== '--' ? m + '%' : '--';
+          if (soilTempVal) soilTempVal.textContent = t !== '--' ? t + '°C' : '--';
+          if (airHumVal) airHumVal.textContent = h !== '--' ? h + '%' : '--';
+        } else {
+          if (soilMoistureVal) soilMoistureVal.textContent = '--';
+          if (soilTempVal) soilTempVal.textContent = '--';
+          if (airHumVal) airHumVal.textContent = '--';
         }
-        if (data.prediction && wateringDecisionText) {
+
+        if (data.prediction && data.prediction.water !== undefined && wateringDecisionText) {
           if (data.prediction.water === 1) {
             wateringDecisionText.textContent = '💧 Irrigation Recommended: Turn Water Pump ON';
             wateringDecisionText.style.color = '#8CFF6B';
@@ -163,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             wateringDecisionText.textContent = '✅ Optimal Moisture: Irrigation Pump OFF';
             wateringDecisionText.style.color = '#38bdf8';
           }
+        } else if (wateringDecisionText && (!data.reading || Object.keys(data.reading).length === 0)) {
+          wateringDecisionText.innerHTML = '<span style="color:var(--text-dim);">Awaiting sensor telemetry...</span>';
         }
       }
     } catch (err) {
